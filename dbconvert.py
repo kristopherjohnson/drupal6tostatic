@@ -3,6 +3,7 @@
 # Prerequisites:
 #
 # - A Drupal 6 MySQL database
+# - Put appropriate credentials in dbconfig.py in this directory
 # - pip3 install mysql-connector-python-rf
 
 from datetime import datetime
@@ -12,21 +13,23 @@ import mysql.connector
 # Database credentials are in dbconfig.py.
 import dbconfig
 
+
 # Mapping of nid to list of tags.
 tags = defaultdict(list)
 
 # Mapping of URL like "node/288" to URL like "2017/04/22/my-first-chess-program".
 urls = {}
 
-def convert_tags(cnx):
+
+def convert_tags(connection):
     """Get the tags associated with each post, storing them in the global tags variable."""
 
     query = """SELECT tn.nid, td.name
-    FROM term_node tn
-    JOIN term_data td ON tn.tid = td.tid
-    """
+        FROM term_node tn
+        JOIN term_data td ON tn.tid = td.tid
+        """
 
-    cursor = cnx.cursor()
+    cursor = connection.cursor()
     cursor.execute(query)
 
     for (nid, name) in cursor:
@@ -34,14 +37,15 @@ def convert_tags(cnx):
 
     cursor.close()
 
-def convert_urls(cnx):
+
+def convert_urls(connection):
     """Get the URL associated with each post."""
 
     query = """SELECT src, dst
-    FROM url_alias
-    """
+        FROM url_alias
+        """
 
-    cursor = cnx.cursor()
+    cursor = connection.cursor()
     cursor.execute(query)
 
     for (src, dst) in cursor:
@@ -49,7 +53,8 @@ def convert_urls(cnx):
 
     cursor.close()
 
-def convert_posts(cnx):
+
+def convert_posts(connection):
     """Get all published posts."""
 
     query = """SELECT n.nid, nr.title, n.created, nr.timestamp, ff.name, nr.body
@@ -60,32 +65,37 @@ def convert_posts(cnx):
         AND n.type = 'story'
         """
 
-    cursor = cnx.cursor()
+    cursor = connection.cursor()
     cursor.execute(query)
 
     for (nid, title, created, timestamp, filter, body) in cursor:
+        url = urls[f"node/{nid}"]
         print("----")
         print(f"nid: {nid}")
         print(f"title: {title}")
         print(f"created: {datetime.utcfromtimestamp(created)}")
         print(f"timestamp: {datetime.utcfromtimestamp(timestamp)}")
+        print(f"url: {url}")
+        print(f"tags: {tags[nid]}")
         print(f"filter: {filter}")
         print(f"body: {body[0:40]}...")
 
     cursor.close()
 
+
 def convert():
     """Convert everything from Drupal 6 database to static site generator files."""
-    cnx = mysql.connector.connect(
+    connection = mysql.connector.connect(
             user=dbconfig.dbuser,
             password=dbconfig.dbpassword,
             database=dbconfig.db)
 
-    convert_posts(cnx)
-    convert_tags(cnx)
-    convert_urls(cnx)
+    convert_urls(connection)
+    convert_tags(connection)
+    convert_posts(connection)
 
-    cnx.close()
+    connection.close()
 
-convert()
+if __name__ == '__main__':
+    convert()
 
