@@ -3,28 +3,32 @@
 # Prerequisites:
 #
 # - A Drupal 6 MySQL database
-# - Put appropriate credentials in dbconfig.py in this directory
+# - Appropriate credentials in dbconfig.py in this directory
 # - pip3 install mysql-connector-python-rf
+# - pip3 install Jinja2
 
 from datetime import datetime
 from collections import defaultdict
 import mysql.connector
 
+from post import Post
+from cactusgenerate import cactus_generate
+
 # Database credentials are in dbconfig.py.
 import dbconfig
 
 
-# Mapping of nid to list of tags.
-tags = defaultdict(list)
-
-# Mapping of URL like "node/288" to URL like "2017/04/22/my-first-chess-program".
-urls = {}
-
-
 def convert_tags(connection):
-    """Get the tags associated with each post, storing them in the global tags variable."""
+    """
+    Get the tags associated with each post.
 
-    query = """SELECT tn.nid, td.name
+    Returns a dictionary where keys are node IDs and values are lists of strings.
+    """
+
+    tags = defaultdict(list)
+
+    query = """
+        SELECT tn.nid, td.name
         FROM term_node tn
         JOIN term_data td ON tn.tid = td.tid
         """
@@ -37,11 +41,21 @@ def convert_tags(connection):
 
     cursor.close()
 
+    return tags
+
 
 def convert_urls(connection):
-    """Get the URL associated with each post."""
+    """
+    Get the URL associated with each post.
 
-    query = """SELECT src, dst
+    Returns a dictionary where keys are strings like "node/288" and
+    values are strings like "2017/04/22/my-first-chess-program".
+    """
+
+    urls = {}
+
+    query = """
+        SELECT src, dst
         FROM url_alias
         """
 
@@ -53,11 +67,18 @@ def convert_urls(connection):
 
     cursor.close()
 
+    return urls
 
-def convert_posts(connection):
-    """Get all published posts."""
 
-    query = """SELECT n.nid, nr.title, n.created, nr.timestamp, ff.name, nr.body
+def convert_posts(connection, urls, tags):
+    """
+    Get all published posts.
+    
+    Returns a list of Posts.
+    """
+
+    query = """
+        SELECT n.nid, nr.title, n.created, nr.timestamp, ff.name, nr.body
         FROM node n
         JOIN node_revisions nr ON n.nid = nr.nid
         JOIN filter_formats ff ON nr.format = ff.format
@@ -65,22 +86,54 @@ def convert_posts(connection):
         AND n.type = 'story'
         """
 
+    posts = []
+
     cursor = connection.cursor()
     cursor.execute(query)
 
     for (nid, title, created, timestamp, filter, body) in cursor:
+        createdDatetime = datetime.utcfromtimestamp(created)
+        timestampDatetime = datetime.utcfromtimestamp(timestamp)
         url = urls[f"node/{nid}"]
-        print("----")
-        print(f"nid: {nid}")
-        print(f"title: {title}")
-        print(f"created: {datetime.utcfromtimestamp(created)}")
-        print(f"timestamp: {datetime.utcfromtimestamp(timestamp)}")
-        print(f"url: {url}")
-        print(f"tags: {tags[nid]}")
-        print(f"filter: {filter}")
-        print(f"body: {body[0:40]}...")
+
+        if True:
+            post = Post()
+            post.nid = nid
+            post.title = title
+            post.created = createdDatetime
+            post.timestamp = timestampDatetime
+            post.url = url
+            post.tags = tags
+            post.filter = filter
+            post.body = body
+        else:
+            post = {
+                "nid": nid,
+                "title": title,
+                "created": createdDatetime,
+                "timestamp": timestampDatetime,
+                "url": url,
+                "tags": tags,
+                "filter": filter,
+                "body": body
+            }
+
+        posts.append(post)
+
+        if False:
+            print("----")
+            print(f"nid: {nid}")
+            print(f"title: {title}")
+            print(f"created: {createdDatetime}")
+            print(f"timestamp: {timestampDatetime}")
+            print(f"url: {url}")
+            print(f"tags: {tags[nid]}")
+            print(f"filter: {filter}")
+            print(f"body: {body[0:40]}...")
 
     cursor.close()
+
+    return posts
 
 
 def convert():
@@ -90,11 +143,13 @@ def convert():
             password=dbconfig.dbpassword,
             database=dbconfig.db)
 
-    convert_urls(connection)
-    convert_tags(connection)
-    convert_posts(connection)
+    urls = convert_urls(connection)
+    tags = convert_tags(connection)
+    posts = convert_posts(connection, urls, tags)
 
     connection.close()
+
+    cactus_generate(posts)
 
 if __name__ == '__main__':
     convert()
