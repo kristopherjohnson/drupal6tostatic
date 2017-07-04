@@ -5,11 +5,10 @@ Converts Drupal 6 blog posts to static site generator input files.
 
 Prerequisites:
 
-- A Drupal 6 MySQL database
-- Appropriate credentials in dbconfig.py in this directory
+- a Drupal 6 MySQL database
+- appropriate credentials in dbconfig.py in this directory
 - pip3 install mysql-connector-python-rf
 - pip3 install Jinja2
-- pip3 install markdown
 """
 
 from datetime import datetime
@@ -21,6 +20,7 @@ import mysql.connector
 from post import Post
 from cactusgenerate import cactus_generate
 from hydegenerate import hyde_generate
+from pelicangenerate import pelican_generate
 
 # Database credentials are in dbconfig.py.
 import dbconfig
@@ -115,11 +115,11 @@ def convert_posts(connection, urls, tags):
     return posts
 
 
-def convert(*engines):
+def convert(*generators):
     """Convert blog posts from Drupal 6 database to static site generator files.
     
     Arguments are names of static site generator engines.
-    Supported values are "cactus" and "hyde".
+    Supported values are "pelican", "cactus" and "hyde".
     """
     connection = mysql.connector.connect(
             user=dbconfig.dbuser,
@@ -132,19 +132,20 @@ def convert(*engines):
 
     connection.close()
 
-    for engine in engines:
-        print(f"engine: {engine}")
-        if engine == 'cactus':
+    for generator in generators:
+        if generator == 'cactus':
             cactus_generate(posts)
-        elif engine == 'hyde':
+        elif generator == 'hyde':
             hyde_generate(posts)
+        elif generator == 'pelican':
+            pelican_generate(posts)
         else:
-            raise ValueError(f'Cannot generate for engine "{engine}"')
+            raise ValueError(f'Unknown generator "{generator}"')
 
 
 if __name__ == '__main__':
     if len(argv) > 1:
         convert(*argv[1:])
     else:
-        convert("cactus", "hyde")
+        convert("cactus", "hyde", "pelican")
 
