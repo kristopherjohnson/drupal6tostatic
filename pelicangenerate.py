@@ -9,6 +9,7 @@ postTemplate = """Title: {{ post.title }}
 Date: {{ post.created }}
 Category: Blog
 Slug: {{ post.slug() }}
+Alias: {{ post.url }}/
 {% if post.tags %}Tags: {{ ", ".join(post.tags) }}
 {% endif %}
 
