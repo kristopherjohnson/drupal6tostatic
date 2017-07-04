@@ -8,6 +8,9 @@ from jinja2 import Template
 postTemplate = """Title: {{ post.title }}
 Date: {{ post.created }}
 Category: Blog
+Slug: {{ post.slug() }}
+{% if post.tags %}Tags: {{ ", ".join(post.tags) }}
+{% endif %}
 
 {{ post.body }}
 
@@ -17,8 +20,7 @@ def pelican_generate(posts):
     template = Template(postTemplate)
     for post in posts:
         renderedText = template.render(post=post)
-        filename = os.path.basename(post.url) + ".md"
-        filepath = os.path.join(pelicanroot, "content", filename)
+        filepath = os.path.join(pelicanroot, "content", post.url + ".md")
         print(f"Generating {filepath}")
         dirname = os.path.dirname(filepath)
         if not os.path.exists(dirname):

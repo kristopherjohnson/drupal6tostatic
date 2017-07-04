@@ -1,3 +1,5 @@
+import os.path
+
 class Post(object):
     """Represents a single blog post.
 
@@ -13,5 +15,7 @@ class Post(object):
     - body: string
     """
 
-    pass
+    def slug(self):
+        """Return a string with the last part of the URL."""
+        return os.path.basename(self.url)
 
