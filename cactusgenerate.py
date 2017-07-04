@@ -5,8 +5,7 @@ import os.path
 from cactusconfig import cactusroot
 from jinja2 import Template
 
-postTemplate = """
-title: {{ post.title }}
+postTemplate = """title: {{ post.title }}
 author: Kristopher Johnson
 date: {{ post.created.day }}-{{ post.created.month }}-{{ post.created.year}}
 

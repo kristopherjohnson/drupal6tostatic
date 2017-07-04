@@ -14,10 +14,13 @@ Prerequisites:
 
 from datetime import datetime
 from collections import defaultdict
+from sys import argv
+
 import mysql.connector
 
 from post import Post
 from cactusgenerate import cactus_generate
+from hydegenerate import hyde_generate
 
 # Database credentials are in dbconfig.py.
 import dbconfig
@@ -31,8 +34,7 @@ def convert_tags(connection):
 
     tags = defaultdict(list)
 
-    query = """
-        SELECT tn.nid, td.name
+    query = """SELECT tn.nid, td.name
         FROM term_node tn
         JOIN term_data td ON tn.tid = td.tid
         """
@@ -57,8 +59,7 @@ def convert_urls(connection):
 
     urls = {}
 
-    query = """
-        SELECT src, dst
+    query = """SELECT src, dst
         FROM url_alias
         """
 
@@ -79,8 +80,7 @@ def convert_posts(connection, urls, tags):
     Return a list of Posts.
     """
 
-    query = """
-        SELECT n.nid, nr.title, n.created, nr.timestamp, ff.name, nr.body
+    query = """SELECT n.nid, nr.title, n.created, nr.timestamp, ff.name, nr.body
         FROM node n
         JOIN node_revisions nr ON n.nid = nr.nid
         JOIN filter_formats ff ON nr.format = ff.format
@@ -104,7 +104,7 @@ def convert_posts(connection, urls, tags):
         post.created = createdDatetime
         post.timestamp = timestampDatetime
         post.url = url
-        post.tags = tags
+        post.tags = tags[nid]
         post.filter = filter
         post.body = body
 
@@ -115,8 +115,12 @@ def convert_posts(connection, urls, tags):
     return posts
 
 
-def convert():
-    """Convert blog posts from Drupal 6 database to static site generator files."""
+def convert(*engines):
+    """Convert blog posts from Drupal 6 database to static site generator files.
+    
+    Arguments are names of static site generator engines.
+    Supported values are "cactus" and "hyde".
+    """
     connection = mysql.connector.connect(
             user=dbconfig.dbuser,
             password=dbconfig.dbpassword,
@@ -128,8 +132,19 @@ def convert():
 
     connection.close()
 
-    cactus_generate(posts)
+    for engine in engines:
+        print(f"engine: {engine}")
+        if engine == 'cactus':
+            cactus_generate(posts)
+        elif engine == 'hyde':
+            hyde_generate(posts)
+        else:
+            raise ValueError(f'Cannot generate for engine "{engine}"')
+
 
 if __name__ == '__main__':
-    convert()
+    if len(argv) > 1:
+        convert(*argv[1:])
+    else:
+        convert("cactus", "hyde")
 
