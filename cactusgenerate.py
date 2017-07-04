@@ -8,7 +8,7 @@ from jinja2 import Template
 postTemplate = """
 title: {{ post.title }}
 author: Kristopher Johnson
-date: {{ post.created }}
+date: {{ post.created.day }}-{{ post.created.month }}-{{ post.created.year}}
 
 {% raw %}
 {% extends "post.html" %}
@@ -29,7 +29,8 @@ def cactus_generate(posts):
     template = Template(postTemplate)
     for post in posts:
         renderedText = template.render(post=post)
-        filepath = os.path.join(cactusroot, "pages", "posts", post.url)
+        filename = os.path.basename(post.url) + ".html"
+        filepath = os.path.join(cactusroot, "pages", "posts", filename)
         print(f"Generating {filepath}")
         dirname = os.path.dirname(filepath)
         if not os.path.exists(dirname):
