@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 
-# Prerequisites:
-#
-# - A Drupal 6 MySQL database
-# - Appropriate credentials in dbconfig.py in this directory
-# - pip3 install mysql-connector-python-rf
-# - pip3 install Jinja2
+"""
+Converts Drupal 6 blog posts to static site generator input files.
+
+Prerequisites:
+
+- A Drupal 6 MySQL database
+- Appropriate credentials in dbconfig.py in this directory
+- pip3 install mysql-connector-python-rf
+- pip3 install Jinja2
+- pip3 install markdown
+"""
 
 from datetime import datetime
 from collections import defaultdict
@@ -19,10 +24,9 @@ import dbconfig
 
 
 def convert_tags(connection):
-    """
-    Get the tags associated with each post.
+    """Get the tags associated with each post.
 
-    Returns a dictionary where keys are node IDs and values are lists of strings.
+    Return a dictionary where keys are node IDs and values are lists of strings.
     """
 
     tags = defaultdict(list)
@@ -45,10 +49,9 @@ def convert_tags(connection):
 
 
 def convert_urls(connection):
-    """
-    Get the URL associated with each post.
+    """Get the URL associated with each post.
 
-    Returns a dictionary where keys are strings like "node/288" and
+    Return a dictionary where keys are strings like "node/288" and
     values are strings like "2017/04/22/my-first-chess-program".
     """
 
@@ -71,10 +74,9 @@ def convert_urls(connection):
 
 
 def convert_posts(connection, urls, tags):
-    """
-    Get all published posts.
+    """Get all published posts.
     
-    Returns a list of Posts.
+    Return a list of Posts.
     """
 
     query = """
@@ -96,40 +98,17 @@ def convert_posts(connection, urls, tags):
         timestampDatetime = datetime.utcfromtimestamp(timestamp)
         url = urls[f"node/{nid}"]
 
-        if True:
-            post = Post()
-            post.nid = nid
-            post.title = title
-            post.created = createdDatetime
-            post.timestamp = timestampDatetime
-            post.url = url
-            post.tags = tags
-            post.filter = filter
-            post.body = body
-        else:
-            post = {
-                "nid": nid,
-                "title": title,
-                "created": createdDatetime,
-                "timestamp": timestampDatetime,
-                "url": url,
-                "tags": tags,
-                "filter": filter,
-                "body": body
-            }
+        post = Post()
+        post.nid = nid
+        post.title = title
+        post.created = createdDatetime
+        post.timestamp = timestampDatetime
+        post.url = url
+        post.tags = tags
+        post.filter = filter
+        post.body = body
 
         posts.append(post)
-
-        if False:
-            print("----")
-            print(f"nid: {nid}")
-            print(f"title: {title}")
-            print(f"created: {createdDatetime}")
-            print(f"timestamp: {timestampDatetime}")
-            print(f"url: {url}")
-            print(f"tags: {tags[nid]}")
-            print(f"filter: {filter}")
-            print(f"body: {body[0:40]}...")
 
     cursor.close()
 
@@ -137,7 +116,7 @@ def convert_posts(connection, urls, tags):
 
 
 def convert():
-    """Convert everything from Drupal 6 database to static site generator files."""
+    """Convert blog posts from Drupal 6 database to static site generator files."""
     connection = mysql.connector.connect(
             user=dbconfig.dbuser,
             password=dbconfig.dbpassword,
