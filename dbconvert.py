@@ -88,12 +88,7 @@ def convert_posts(connection, urls, tags):
         AND n.type = 'story'
         """
 
-    posts = []
-
-    cursor = connection.cursor()
-    cursor.execute(query)
-
-    for (nid, title, created, timestamp, filter, body) in cursor:
+    def make_post(nid, title, created, timestamp, filter, body):
         createdDatetime = datetime.utcfromtimestamp(created)
         timestampDatetime = datetime.utcfromtimestamp(timestamp)
         url = urls[f"node/{nid}"]
@@ -108,7 +103,14 @@ def convert_posts(connection, urls, tags):
         post.filter = filter
         post.body = body
 
-        posts.append(post)
+        return post
+
+    cursor = connection.cursor()
+    cursor.execute(query)
+
+    posts = [ make_post(nid, title, created, timestamp, filter, body)
+              for (nid, title, created, timestamp, filter, body) in cursor
+             ]
 
     cursor.close()
 

@@ -1,3 +1,3 @@
 # Local settings for Cactus conversion.
-cactusroot="/Users/kdj/source/CactusBlog"
+cactusroot="gen/cactus.undefinedvalue.com"
 
