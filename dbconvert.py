@@ -6,7 +6,7 @@ Converts Drupal 6 blog posts to static site generator input files.
 Prerequisites:
 
 - a Drupal 6 MySQL database
-- appropriate credentials in dbconfig.py in this directory
+- appropriate settings in dbconfig.py in this directory
 - pip3 install mysql-connector-python-rf
 - pip3 install Jinja2
 """
@@ -32,8 +32,6 @@ def convert_tags(connection):
     Return a dictionary where keys are node IDs and values are lists of strings.
     """
 
-    tags = defaultdict(list)
-
     query = """SELECT tn.nid, td.name
         FROM term_node tn
         JOIN term_data td ON tn.tid = td.tid
@@ -42,6 +40,7 @@ def convert_tags(connection):
     cursor = connection.cursor()
     cursor.execute(query)
 
+    tags = defaultdict(list)
     for (nid, name) in cursor:
         tags[nid].append(name)
 
@@ -57,8 +56,6 @@ def convert_urls(connection):
     values are strings like "2017/04/22/my-first-chess-program".
     """
 
-    urls = {}
-
     query = """SELECT src, dst
         FROM url_alias
         """
@@ -66,6 +63,7 @@ def convert_urls(connection):
     cursor = connection.cursor()
     cursor.execute(query)
 
+    urls = {}
     for (src, dst) in cursor:
         urls[src] = dst
 
@@ -88,17 +86,15 @@ def convert_posts(connection, urls, tags):
         AND n.type = 'story'
         """
 
-    def make_post(nid, title, created, timestamp, filter, body):
-        createdDatetime = datetime.utcfromtimestamp(created)
-        timestampDatetime = datetime.utcfromtimestamp(timestamp)
-        url = urls[f"node/{nid}"]
+    def make_post(row):
+        (nid, title, created, timestamp, filter, body) = row
 
         post = Post()
         post.nid = nid
         post.title = title
-        post.created = createdDatetime
-        post.timestamp = timestampDatetime
-        post.url = url
+        post.created = datetime.utcfromtimestamp(created)
+        post.timestamp = datetime.utcfromtimestamp(timestamp)
+        post.url = urls[f"node/{nid}"]
         post.tags = tags[nid]
         post.filter = filter
         post.body = body
@@ -108,9 +104,7 @@ def convert_posts(connection, urls, tags):
     cursor = connection.cursor()
     cursor.execute(query)
 
-    posts = [ make_post(nid, title, created, timestamp, filter, body)
-              for (nid, title, created, timestamp, filter, body) in cursor
-             ]
+    posts = [make_post(row) for row in cursor]
 
     cursor.close()
 
