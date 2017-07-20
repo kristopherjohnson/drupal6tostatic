@@ -1,6 +1,6 @@
-This is a set of scripts I am writing to migrate my blog from Drupal 6 to a static site generator.
+This is a set of scripts I wrote to migrate my blog from Drupal 6 to a static site generator.
 
-More details will eventually be provided in a blog post.
+For more details, see <http://undefinedvalue.com/rebuilding-my-blog-again.html>
 
 Scripts:
 
